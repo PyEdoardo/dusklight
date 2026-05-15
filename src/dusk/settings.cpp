@@ -25,6 +25,7 @@ UserSettings g_userSettings = {
 
     .game = {
         .language { "game.language", GameLanguage::English },
+        .uiLanguage{"game.uiLanguage", DusklightLanguage::English },
 
         // Quality of Life
         .enableQuickTransform {"game.enableQuickTransform", false},
@@ -190,6 +191,7 @@ void registerSettings() {
 
     // Game
     Register(g_userSettings.game.language);
+    Register(g_userSettings.game.uiLanguage);
     Register(g_userSettings.game.enableQuickTransform);
     Register(g_userSettings.game.hideTvSettingsScreen);
     Register(g_userSettings.game.biggerWallets);
