@@ -47,6 +47,16 @@ constexpr std::array kLanguageNames = {
     "Italian",
 };
 
+constexpr std::array kUILanguageNames = {
+    "English",
+    "German",
+    "French",
+    "Spanish",
+    "Italian",
+    "Portuguese",
+    "Brazilian Portuguese"
+};
+
 constexpr std::array kCardFileTypes = {
     "Card Image",
     "GCI Folder",
@@ -598,6 +608,39 @@ SettingsWindow::SettingsWindow(bool prelaunch) : mPrelaunch(prelaunch) {
                     }
                     pane.add_rml("<br/>Changes require a restart.");
                 });
+    leftPane.register_control(
+        leftPane.add_select_button({
+            .key = "UI Language",
+            .getValue =
+                [] {
+                    const u8 idx = static_cast<u8>(getSettings().game.uiLanguage.getValue());
+                    return kUILanguageNames[idx];
+                },
+            .isModified =
+                [] {
+                    return getSettings().game.uiLanguage.getValue() !=
+                           prelaunch_state().initialUILanguage;
+                },
+        }),
+        rightPane, [](Pane& pane) {
+            for (int i = 0; i < kUILanguageNames.size(); i++) {
+                pane.add_button({
+                                .text = kUILanguageNames[i],
+                                .isSelected =
+                                    [i] {
+                                        return getSettings().game.uiLanguage.getValue() ==
+                                               static_cast<DusklightLanguage>(i);
+                                    },
+                            })
+                    .on_pressed([i] {
+                        mDoAud_seStartMenu(kSoundItemChange);
+                        getSettings().game.uiLanguage.setValue(static_cast<DusklightLanguage>(i));
+                        config::Save();
+                    });
+            }
+            pane.add_rml("<br/>Changes require a restart.");
+        });
+            
             leftPane.register_control(
                 leftPane.add_select_button({
                     .key = "Graphics Backend",

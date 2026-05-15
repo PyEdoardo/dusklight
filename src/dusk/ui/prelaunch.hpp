@@ -54,6 +54,7 @@ struct PrelaunchState {
     std::string pendingDiscPath;
     iso::DiscInfo pendingDiscInfo{};
     iso::ValidationError pendingDiscValidation = iso::ValidationError::Unknown;
+    DusklightLanguage initialUILanguage = DusklightLanguage::English;
 };
 
 PrelaunchState& prelaunch_state() noexcept;

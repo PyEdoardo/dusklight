@@ -639,6 +639,7 @@ void ensure_initialized() noexcept {
     state.configuredDiscValidation =
         verification_from_config(getSettings().backend.isoVerification.getValue());
     state.initialLanguage = getSettings().game.language;
+    state.initialUILanguage = getSettings().game.uiLanguage;
     state.initialGraphicsBackend = getSettings().backend.graphicsBackend;
     state.initialCardFileType = getSettings().backend.cardFileType;
     state.errorString.clear();
@@ -664,6 +665,9 @@ bool is_restart_pending() noexcept {
         return true;
     }
     if (getSettings().game.language.getValue() != state.initialLanguage) {
+        return true;
+    }
+    if (getSettings().game.uiLanguage.getValue() != state.initialUILanguage) {
         return true;
     }
     return false;
