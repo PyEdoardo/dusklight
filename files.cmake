@@ -1506,6 +1506,8 @@ set(DUSK_FILES
         src/dusk/ui/string_button.hpp
         src/dusk/ui/tab_bar.cpp
         src/dusk/ui/tab_bar.hpp
+        src/dusk/ui/translation.cpp
+        src/dusk/ui/translation.hpp
         src/dusk/ui/ui.cpp
         src/dusk/ui/ui.hpp
         src/dusk/ui/warp.cpp

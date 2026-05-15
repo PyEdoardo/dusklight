@@ -15,6 +15,9 @@
 #include "input.hpp"
 #include "prelaunch.hpp"
 #include "window.hpp"
+#include "translation.hpp"
+#include "dusk/data.hpp"
+#include "dusk/logging.h"
 
 namespace dusk::ui {
 namespace {
@@ -29,6 +32,7 @@ std::vector<std::unique_ptr<Document> > sDocumentStack;
 std::vector<std::unique_ptr<Document> > sPassiveDocuments;
 std::deque<Toast> sToasts;
 bool sMenuNotificationRequested = false;
+Translation sTranslation;
 
 // Sometimes gamepads can connect and disconnect quickly, especially during
 // connection negotiation. In this case, we'll receive an _ADDED event for a
@@ -55,6 +59,105 @@ bool initialize() noexcept {
     load_font("MaterialSymbolsRounded-Regular.ttf");
     load_font("NotoMono-Regular.ttf");
 
+    const auto uiLanguage = static_cast<u8>(getSettings().game.uiLanguage.getValue());
+    const char* uiLanguageIds[] = {
+        "en",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "pt-BR",
+    };
+    const size_t uiLanguageIndex =
+        static_cast<size_t>(uiLanguage) < std::size(uiLanguageIds) ? uiLanguage : 0;
+    const auto dataPath = data::configured_data_path();
+    const auto find_lang_path = [&](std::string_view langId) {
+        std::filesystem::path currentPath;
+        std::error_code currentEc;
+        currentPath = std::filesystem::current_path(currentEc);
+
+        const std::filesystem::path baseCandidates[] = {
+            currentPath,
+            currentPath.parent_path(),
+            currentPath.parent_path().parent_path(),
+            currentPath.parent_path().parent_path().parent_path(),
+        };
+
+        for (const auto& basePath : baseCandidates) {
+            if (basePath.empty()) {
+                continue;
+            }
+            const std::filesystem::path candidate =
+                basePath / "assets" / "UI" / "UILang" / std::string{langId} / "ui.json";
+            std::error_code ec;
+            if (std::filesystem::exists(candidate, ec) && !ec) {
+                return candidate;
+            }
+        }
+
+        const std::filesystem::path candidates[] = {
+            dataPath / "res" / "UILang" / std::string{langId} / "ui.json",
+            dataPath / "assets" / "UI" / "UILang" / std::string{langId} / "ui.json",
+            std::filesystem::path("res") / "UILang" / std::string{langId} / "ui.json",
+            std::filesystem::path("assets") / "UI" / "UILang" / std::string{langId} / "ui.json",
+        };
+
+        for (const auto& candidate : candidates) {
+            std::error_code ec;
+            if (std::filesystem::exists(candidate, ec) && !ec) {
+                return candidate;
+            }
+        }
+
+        const std::filesystem::path assetsRoots[] = {
+            dataPath / "assets",
+            std::filesystem::path("assets"),
+            currentPath / "assets",
+            currentPath.parent_path() / "assets",
+            currentPath.parent_path().parent_path() / "assets",
+            currentPath.parent_path().parent_path().parent_path() / "assets",
+        };
+        for (const auto& assetsRoot : assetsRoots) {
+            std::error_code assetsEc;
+            if (!std::filesystem::exists(assetsRoot, assetsEc) || assetsEc) {
+                continue;
+            }
+            std::filesystem::directory_iterator it(assetsRoot, assetsEc);
+            if (assetsEc) {
+                continue;
+            }
+            for (const auto& entry : it) {
+                if (!entry.is_directory()) {
+                    continue;
+                }
+                auto candidate = entry.path() / "UILang" / std::string{langId} / "ui.json";
+                std::error_code candidateEc;
+                if (std::filesystem::exists(candidate, candidateEc) && !candidateEc) {
+                    return candidate;
+                }
+            }
+        }
+
+        return std::filesystem::path{};
+    };
+
+    auto uiLangPath = find_lang_path(uiLanguageIds[uiLanguageIndex]);
+    auto fallbackPath = find_lang_path("en");
+    if (uiLangPath.empty()) {
+        uiLangPath = std::filesystem::path("res") / "UILang" / uiLanguageIds[uiLanguage] / "ui.json";
+    }
+    if (fallbackPath.empty()) {
+        fallbackPath = std::filesystem::path("res") / "UILang" / "en" / "ui.json";
+    }
+    const auto uiLangPathString = io::fs_path_to_string(uiLangPath);
+    const auto fallbackPathString = io::fs_path_to_string(fallbackPath);
+    const bool loaded = sTranslation.load(uiLangPathString, fallbackPathString);
+    if (!loaded) {
+        DuskLog.warn("UI translation not loaded. Primary: '{}' Fallback: '{}'", uiLangPathString,
+            fallbackPathString);
+    }
+
     sInitialized = true;
     return true;
 }
@@ -65,6 +168,7 @@ void shutdown() noexcept {
     sConnectedGamepads.clear();
     input::reset_input_state();
     input::release_input_block();
+    sTranslation = Translation{};
     sInitialized = false;
 }
 
@@ -262,6 +366,14 @@ void update() noexcept {
 
 std::filesystem::path resource_path(const std::filesystem::path& filename) noexcept {
     return std::filesystem::path("res") / filename;
+}
+
+Translation& translation() noexcept {
+    return sTranslation;
+}
+
+std::string tr(std::string_view key) noexcept {
+    return sTranslation.get(std::string{key});
 }
 
 std::string escape(std::string_view str) noexcept {
