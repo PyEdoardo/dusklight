@@ -157,6 +157,7 @@ namespace dusk::config {
     template class ConfigImpl<dusk::BloomMode>;
     template class ConfigImpl<dusk::DiscVerificationState>;
     template class ConfigImpl<dusk::GameLanguage>;
+    template class ConfigImpl<dusk::DusklightLanguage>;
     template class ConfigImpl<dusk::GyroMode>;
 }
 

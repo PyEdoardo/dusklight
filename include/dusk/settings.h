@@ -23,6 +23,16 @@ enum class GameLanguage : u8 {
     Italian = OS_LANGUAGE_ITALIAN,
 };
 
+enum class DusklightLanguage : u8 {
+    English = 0,
+    German = 1,
+    French = 2,
+    Spanish = 3,
+    Italian = 4,
+    Portuguese = 5,
+    BrazilianPortuguese = 6,
+};
+
 enum class DiscVerificationState : u8 {
     Unknown = 0,
     Success,
@@ -45,6 +55,12 @@ template <>
 struct ConfigEnumRange<GameLanguage> {
     static constexpr auto min = GameLanguage::English;
     static constexpr auto max = GameLanguage::Italian;
+};
+
+template <>
+struct ConfigEnumRange<DusklightLanguage> {
+    static constexpr auto min = DusklightLanguage::English;
+    static constexpr auto max = DusklightLanguage::BrazilianPortuguese;
 };
 
 template <>
@@ -90,6 +106,9 @@ struct UserSettings {
 
     struct {
         ConfigVar<GameLanguage> language;
+
+        // UI Lang
+        ConfigVar<DusklightLanguage> uiLanguage;
 
         // QoL
         ConfigVar<bool> enableQuickTransform;
